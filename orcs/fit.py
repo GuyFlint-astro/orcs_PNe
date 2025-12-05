@@ -209,27 +209,35 @@ class SpectralCube(orcs.core.SpectralCube):
                             ikey, fit_results[ikey]))
 
             if plot and ifit != []:
-
+                axis = self.params.base_axis ### EDITED BY NANCY (well, Guy really!)
                 import pylab as pl
+                pl.figure(figsize=(10, 8))
                 ax1 = pl.subplot(211)
-                ax1.plot(axis, ispectrum, c= '0.3',
-                         ls='--', lw=1.5,
+                ax1.plot(axis, ispectrum.data.real, c= 'black',
+                         ls='-', lw=1.5,
                          label='orig spectrum')
 
-                for imod in range(len(fitted_models[linesmodel])):
-                    ax1.plot(
-                        axis,
-                        fitted_models[linesmodel][imod]
-                        + fitted_models['ContinuumModel'],
-                        c= '0.5', ls='-', lw=1.5)
+                # for i in range(len(paramsfile)): ### Edit that changes what it does, not just to make it work
+                #     if paramsfile[i]['a'] > 1.5e-16:
+                #         ax1.text(paramsfile[i]['x'],
+                #                 paramsfile[i]['a'], '{}'.format(paramsfile[i]['line_name']), rotation=90,
+                #                 fontsize=8, color='black')
+                
+                # for imod in range(len(fitted_models[linesmodel])):
+                #     ax1.plot(
+                #         axis,
+                #         fitted_models[linesmodel][imod]
+                #         + fitted_models['ContinuumModel'],
+                #         c= '0.5', ls='-', lw=1.5)
 
-                ax1.plot(axis, fitted_vector, c= '0.',
-                         ls='-', lw=1.5,
+                ax1.plot(axis, fitted_vector, c= 'green',
+                         ls='--', lw=1.5,
                          label='fit')
                 ax1.grid()
+                ax1.set_xlim(15000, 15400)
                 ax1.legend()
                 ax2 = pl.subplot(212, sharex=ax1)
-                ax2.plot(axis, ispectrum - fitted_vector, c= 'red',
+                ax2.plot(axis, ispectrum.data.real - fitted_vector, c= 'red',
                          ls='-', lw=1.5, label='residual')
                 ax2.grid()
                 ax2.legend()

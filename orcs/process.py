@@ -137,7 +137,7 @@ class SpectralCube(fit.SpectralCube):
 
     def map_sky_velocity(self, mean_sky_vel, div_nb=20, plot=True,
                          x_range=None, y_range=None,
-                         exclude_reg_file_path=None,
+                         exclude_reg_file_path=None, reg_type=None, # EDITED BY NANCY
                          no_fit=False, threshold=None,
                          sky_lines=None, signal_range=None):
         """Map the sky velocity on a rectangular grid and interpolate it
@@ -213,10 +213,13 @@ class SpectralCube(fit.SpectralCube):
 
             exclude_mask = np.zeros((dimx, dimy), dtype=bool)
             if exclude_reg_file_path is not None:
-                logging.info('excluding region from file {}'.format(exclude_reg_file_path))
-                exclude_mask[orb.utils.misc.get_mask_from_ds9_region_file(
-                    exclude_reg_file_path,
-                    [0, dimx], [0, dimy])] = True
+                if reg_type == 'mask': #EDITED BY NANCY (well, Guy really!)
+                    exclude_mask = exclude_reg_file_path
+                else:
+                    logging.info('excluding region from file {}'.format(exclude_reg_file_path))
+                    exclude_mask[orb.utils.misc.get_mask_from_ds9_region_file(
+                        exclude_reg_file_path,
+                        [0, dimx], [0, dimy])] = True
 
 
             with orb.utils.io.open_file(self._get_temp_reg_path(), 'w') as f:
@@ -289,10 +292,14 @@ class SpectralCube(fit.SpectralCube):
         # remove excluded regions (if already fitted, e.g. when the
         # process is done another time with a different exclusion mask)
         if exclude_reg_file_path is not None:
-            exclude_mask = np.zeros((dimx, dimy), dtype=bool)
-            exclude_mask[orb.utils.misc.get_mask_from_ds9_region_file(
-                exclude_reg_file_path,
-                [0, dimx], [0, dimy])] = True
+            if reg_type == 'mask': #EDITED BY NANCY
+                exclude_mask = exclude_reg_file_path
+            else:
+                exclude_mask = np.zeros((dimx, dimy), dtype=bool)
+                logging.info('excluding region from file {}'.format(exclude_reg_file_path))
+                exclude_mask[orb.utils.misc.get_mask_from_ds9_region_file(
+                    exclude_reg_file_path,
+                    [0, dimx], [0, dimy])] = True
 
             for i in range(len(x)):
                 if exclude_mask[int(x[i]), int(y[i])]:
@@ -351,8 +358,16 @@ class SpectralCube(fit.SpectralCube):
             fig.savefig(self._get_data_prefix() + 'sky_map_model_full.svg')
 
             # get velocity on grid points
-            final_sky_vel_map = [
-                final_sky_vel_map[int(x[i]), int(y[i])] for i in range(len(x))]
+            #final_sky_vel_map = [
+            #    final_sky_vel_map[int(x[i]), int(y[i])] for i in range(len(x))]
+
+            # get velocity on grid points, EDITED BY GUY
+            final_vals = np.full(len(x), np.nan)  # Maintain the same length as x, y even if some are NaN (masked points)
+            for i in range(len(x)):
+                if not (np.isnan(x[i]) or np.isnan(y[i])):
+                    final_vals[i] = final_sky_vel_map[int(x[i]), int(y[i])]
+
+            final_sky_vel_map = final_vals
 
             fig = pl.figure()
             pl.scatter(x, y, c=final_sky_vel_map, vmin=vmin, vmax=vmax, s=30,
@@ -416,7 +431,7 @@ class SpectralCube(fit.SpectralCube):
 
             pl.show()
 
-    def detect_sources(self, fast=True):
+    def detect_sources(self, path=None, fast=True): ### NANCY EDITED THIS FUNCTION to include an optional alternative path
         """Detect emission line sources in the spectral cube
 
         :param fast: (Optional) Fast detection algorithm (with FFT
@@ -525,12 +540,16 @@ class SpectralCube(fit.SpectralCube):
             det_frame[new_det] = imax_frame[new_det]
             argdet_frame[new_det] = iargmax_frame[new_det]
 
-
-            
-        orb.utils.io.write_fits(self._get_detection_frame_path(),
-                                det_frame, overwrite=True)
-        orb.utils.io.write_fits(self._get_detection_pos_frame_path(),
-                                argdet_frame, overwrite=True)
+        if path == None: ### EDITED BY NANCY
+            orb.utils.io.write_fits(self._get_detection_frame_path(),
+                                    det_frame, overwrite=True)
+            orb.utils.io.write_fits(self._get_detection_pos_frame_path(),
+                                    argdet_frame, overwrite=True)
+        else: ### EDITED BY NANCY
+            orb.utils.io.write_fits(path + 'detection_frame.fits',
+                                    det_frame, overwrite=True)
+            orb.utils.io.write_fits(path + 'detection_pos_frame.fits',
+                                    argdet_frame, overwrite=True)
 
 
     def register(self, distortion_map_path=None):
