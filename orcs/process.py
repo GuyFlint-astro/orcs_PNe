@@ -508,6 +508,9 @@ class SpectralCube(fit.SpectralCube):
                                      0, self.dimy,
                                      zmin, zmax,
                                      silent=False)
+            
+            if self.level == 2.5 or self.level == 3: ## EDITED by Nancy
+                dat_cube = dat_cube.real
 
             res_cube = np.empty_like(dat_cube)
             res_cube.fill(np.nan)
